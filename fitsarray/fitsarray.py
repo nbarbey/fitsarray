@@ -9,7 +9,7 @@ class InfoArray(np.ndarray):
     """
     def __new__(subtype, shape, dtype=float, buffer=None, offset=0,
                 strides=None, order=None, header=None):
-        obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset, 
+        obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset,
                                  strides, order)
         obj.header = header
         return obj
@@ -20,6 +20,20 @@ class InfoArray(np.ndarray):
 class FitsArray(InfoArray):
     """A numpy ndarray supplemented with a pyfits header
     """
+    def __new__(subtype, shape, dtype=float, buffer=None, offset=0,
+                strides=None, order=None, header=None):
+        obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset,
+                                 strides, order)
+        # ensure minimal header is setup
+        if header is None:
+            header = pyfits.PrimaryHDU(obj).header
+        if isinstance(header, dict):
+            header = dict2header(header)
+        obj.header = header
+        enforce_minimal_header(obj)
+        return obj
+    def update(self, key, value, **kargs):
+        self.header.update(key, value, **kargs)
     def tofits(self, filename):
         """Save FitsArray as a fits file
         """
@@ -43,13 +57,12 @@ class FitsArray(InfoArray):
         if type(axis) is int:
             axis = (axis,)
         if axis is None:
-            axis = np.arange(self.ndim)
-        factors = np.ones(self.ndim)
-        axes = np.arange(self.ndim)
+            axis = np.arange(self.ndim, dtype=int)
+        factors = np.ones(self.ndim, dtype=int)
         for f, a in zip(factor, axis):
             factors[a] = f
         out = asfitsarray(self)
-        for f, a in zip(factors, axes):
+        for a, f in enumerate(factors):
             # update data
             for i in xrange(f):
                 s = self.ndim * [slice(None), ]
@@ -64,6 +77,15 @@ class FitsArray(InfoArray):
             out.header['cdelt' + strn] *= f
             out.header['crpix' + strn] /= f
         return out
+
+def enforce_minimal_header(arr):
+    minimal_defaults = [('SIMPLE',True,),
+                        ('BITPIX', int(bitpix_inv[arr.dtype])),
+                        ('NAXIS', arr.ndim)]
+    for i in xrange(arr.ndim):
+        minimal_defaults.append(('NAXIS' + str(i), arr.shape[i]))
+    for default in minimal_defaults[::-1]:
+        arr.update(default[0], arr.header.get(default[0], default[1]), before=0)
 
 def copy_header(header):
     header_dict = dict(header)
@@ -81,12 +103,40 @@ def read_fits_array(filename, ext=0):
     fits_array[:] = data
     return fits_array
 
-def asfitsarray(array):
-    """Return a copy of an array casted as a FitsArray
+def asfitsarray(array, header=None):
+    """Returns a copy of an ndarray or a subclass as a FitsArray
     """
-    header = copy_header(getattr(array, 'header', None))
+    header = copy_header(getattr(array, 'header', header))
+    if isinstance(header, dict):
+        header = dict2header(header)
     out = FitsArray(array.shape, header=header)
     out[:] = copy.copy(array)
+    return out
+
+def dict2header(header):
+    cards = [pyfits.Card(k, header[k]) for k in header]
+    return pyfits.Header(cards=cards)
+
+def asinfoarray(array, header=None):
+    """Return a copy of an array casted as a FitsArray
+    """
+    header = copy.copy(getattr(array, 'header', header))
+    out = InfoArray(array.shape, header=header)
+    out[:] = copy.copy(array)
+    return out
+
+def zeros(shape, **kargs):
+    out = FitsArray(shape, **kargs)
+    dtype = kargs.get('dtype', float)
+    order = kargs.get('order')
+    out[:] = np.zeros(shape, dtype=dtype, order=order)
+    return out
+
+def ones(shape, **kargs):
+    out = FitsArray(shape, **kargs)
+    dtype = kargs.get('dtype', float)
+    order = kargs.get('order')
+    out[:] = np.ones(shape, dtype=dtype, order=order)
     return out
 
 def get_dtype(header, default=float):
@@ -97,17 +147,22 @@ def get_dtype(header, default=float):
         return default
 
 # fits convention for data types
-bitpix = {'8':np.int8, '16':np.int16, '32':np.int32,
-          '-32':np.float32,'-64':np.float64}
+bitpix = {'8':np.dtype(np.int8),
+          '16':np.dtype(np.int16),
+          '32':np.dtype(np.int32),
+          '-32':np.dtype(np.float32),
+          '-64':np.dtype(np.float64)}
+bitpix_inv = dict()
+for k in bitpix: bitpix_inv[bitpix[k]] = k
 
-def infosarrays2infoarray(arrays):
+def infoarrays2infoarray(arrays):
     """Get a list of InfoArrays and return an info array
     as a concatenation along a new axis
     """
     N = len(arrays)
     keys = arrays[0].header.keys()
     header = dict()
-    for k in keys: header[k] = []
+    for k in keys: header[k] = np.array([])
     out = InfoArray(arrays[0].shape + (N,), header=header)
     # update values
     out[:] = np.concatenate([array.reshape(array.shape + (1,))
@@ -115,5 +170,12 @@ def infosarrays2infoarray(arrays):
     # update keys
     for array in arrays:
         for k in keys:
-            out.header[k] += [array.header[k],]
+            out.header[k] = np.concatenate((np.array(out.header[k]),
+                                            np.array([array.header[k]])))
     return out
+
+def fits2fitsarray(fits, ext=0):
+    return hdu2fitsarray(fits[ext])
+
+def hdu2fitsarray(hdu):
+    return asfitsarray(hdu.data, header=hdu.header)
