@@ -16,6 +16,8 @@ class InfoArray(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None: return
         self.header = getattr(obj, 'header', None)
+    def copy(self):
+        return asinfoarray(copy.copy(self), header=copy.copy(self.header))
 
 class FitsArray(InfoArray):
     """A numpy ndarray supplemented with a pyfits header
