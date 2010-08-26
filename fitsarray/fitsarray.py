@@ -123,7 +123,7 @@ def asinfoarray(array, header=None):
     """Return a copy of an array casted as a FitsArray
     """
     header = copy.copy(getattr(array, 'header', header))
-    out = InfoArray(array.shape, header=header)
+    out = InfoArray(np.asarray(array).shape, header=header)
     out[:] = copy.copy(array)
     return out
 
