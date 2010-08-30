@@ -45,9 +45,9 @@ class FitsArray(InfoArray):
         axes_list = []
         for n in xrange(self.ndim):
             strn = str(n + 1)
-            cdelt = self.header['cdelt' + strn]
-            crpix = self.header['crpix' + strn]
-            crval = self.header['crval' + strn]
+            cdelt = self.header['CDELT' + strn]
+            crpix = self.header['CRPIX' + strn]
+            crval = self.header['CRVAL' + strn]
             axis_len = self.shape[n]
             u = (np.arange(axis_len) - crpix) * cdelt + crval
             axes_list.append(u)
@@ -76,8 +76,9 @@ class FitsArray(InfoArray):
                     out += tmp[s]
             # update metadata
             strn = str((a % self.ndim) + 1)
-            out.header['cdelt' + strn] *= f
-            out.header['crpix' + strn] /= f
+            out.header['CDELT' + strn] *= f
+            out.header['CRPIX' + strn] /= f
+            out.header['NAXIS' + strn] /= f
         return out
 
 def enforce_minimal_header(arr):
@@ -85,7 +86,7 @@ def enforce_minimal_header(arr):
                         ('BITPIX', int(bitpix_inv[arr.dtype])),
                         ('NAXIS', arr.ndim)]
     for i in xrange(arr.ndim):
-        minimal_defaults.append(('NAXIS' + str(i), arr.shape[i]))
+        minimal_defaults.append(('NAXIS' + str(i + 1), arr.shape[i]))
     for default in minimal_defaults[::-1]:
         arr.update(default[0], arr.header.get(default[0], default[1]), before=0)
 
@@ -181,3 +182,10 @@ def fits2fitsarray(fits, ext=0):
 
 def hdu2fitsarray(hdu):
     return asfitsarray(hdu.data, header=hdu.header)
+
+def fitsarray_from_header(header):
+    if isinstance(header, dict):
+        header = dict2header(header)
+    shape = [header['NAXIS' + str(i)] for i in xrange(header['NAXIS'])]
+    dtype = bitpix[str(int(header['BITPIX']))]
+    return FitsArray(shape, header=header, dtype=dtype)
