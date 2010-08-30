@@ -186,6 +186,6 @@ def hdu2fitsarray(hdu):
 def fitsarray_from_header(header):
     if isinstance(header, dict):
         header = dict2header(header)
-    shape = [header['NAXIS' + str(i)] for i in xrange(header['NAXIS'])]
+    shape = [header['NAXIS' + str(i + 1)] for i in xrange(header['NAXIS'])]
     dtype = bitpix[str(int(header['BITPIX']))]
     return FitsArray(shape, header=header, dtype=dtype)
