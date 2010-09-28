@@ -54,8 +54,8 @@ class FitsArray(InfoArray):
         return axes_list
     def bin(self, factor, axis=None):
         """Output binned data"""
-        if type(factor) is int:
-            factor = self.ndim * (factor,)
+        if np.isscalar(factor):
+            factor = self.ndim * (int(factor),)
         if type(axis) is int:
             axis = (axis,)
         if axis is None:
