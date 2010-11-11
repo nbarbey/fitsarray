@@ -7,10 +7,13 @@ class InfoArray(np.ndarray):
 
     There is no requirement on the nature of the object
     """
-    def __new__(subtype, shape, dtype=float, buffer=None, offset=0,
+    def __new__(subtype, shape=None, data=None, dtype=float, buffer=None, offset=0,
                 strides=None, order=None, header=None):
-        obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset,
-                                 strides, order)
+        if shape is not None:
+            obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset,
+                                     strides, order)
+        elif data is not None:
+            obj = np.array(data).view(subtype)
         obj.header = header
         return obj
     def __array_finalize__(self, obj):
@@ -22,10 +25,19 @@ class InfoArray(np.ndarray):
 class FitsArray(InfoArray):
     """A numpy ndarray supplemented with a pyfits header
     """
-    def __new__(subtype, shape, dtype=float, buffer=None, offset=0,
+    def __new__(subtype, shape=None, data=None, infile=None, ext=0, dtype=float, buffer=None, offset=0,
                 strides=None, order=None, header=None):
-        obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset,
-                                 strides, order)
+        # various inputs
+        if shape is not None:
+            obj = np.ndarray.__new__(subtype, shape, dtype, buffer, offset,
+                                     strides, order)
+        elif data is not None:
+            obj = np.array(data).view(subtype)
+        elif infile is not None:
+            fits = pyfits.fitsopen(file)
+            obj = fits[ext].data.view(subtype)
+            header = fits[ext].header
+            dtype = get_dtype(header)
         # ensure minimal header is setup
         if header is None:
             header = pyfits.PrimaryHDU(obj).header
@@ -102,30 +114,26 @@ def read_fits_array(filename, ext=0):
     header = fits[ext].header
     dtype = get_dtype(header)
     data = fits[ext].data.astype(dtype)
-    fits_array = FitsArray(data.shape, header=header, dtype=dtype)
-    fits_array[:] = data
+    fits_array = FitsArray(data=data, header=header, dtype=dtype)
     return fits_array
 
 def asfitsarray(array, header=None):
-    """Returns a copy of an ndarray or a subclass as a FitsArray
+    """Returns a view of an ndarray or a subclass as a FitsArray
     """
     header = copy_header(getattr(array, 'header', header))
     if isinstance(header, dict):
         header = dict2header(header)
-    out = FitsArray(array.shape, header=header)
-    out[:] = copy.copy(array)
-    return out
+    return FitsArray(data=array, header=header)
 
 def dict2header(header):
     cards = [pyfits.Card(k, header[k]) for k in header]
     return pyfits.Header(cards=cards)
 
 def asinfoarray(array, header=None):
-    """Return a copy of an array casted as a FitsArray
+    """Return a view of an array casted as a FitsArray
     """
     header = copy.copy(getattr(array, 'header', header))
-    out = InfoArray(np.asarray(array).shape, header=header)
-    out[:] = copy.copy(array)
+    out = InfoArray(data=array, header=header)
     return out
 
 def zeros(shape, **kargs):
