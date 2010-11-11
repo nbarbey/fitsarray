@@ -95,7 +95,7 @@ class FitsArray(InfoArray):
 
 def enforce_minimal_header(arr):
     minimal_defaults = [('SIMPLE',True,),
-                        ('BITPIX', int(bitpix_inv[arr.dtype])),
+                        ('BITPIX', int(bitpix_inv[arr.dtype.name])),
                         ('NAXIS', arr.ndim)]
     for i in xrange(arr.ndim):
         minimal_defaults.append(('NAXIS' + str(i + 1), arr.shape[i]))
@@ -158,11 +158,11 @@ def get_dtype(header, default=float):
         return default
 
 # fits convention for data types
-bitpix = {'8':np.dtype(np.int8),
-          '16':np.dtype(np.int16),
-          '32':np.dtype(np.int32),
-          '-32':np.dtype(np.float32),
-          '-64':np.dtype(np.float64)}
+bitpix = {'8':np.dtype(np.int8).name,
+          '16':np.dtype(np.int16).name,
+          '32':np.dtype(np.int32).name,
+          '-32':np.dtype(np.float32).name,
+          '-64':np.dtype(np.float64).name}
 bitpix_inv = dict()
 for k in bitpix: bitpix_inv[bitpix[k]] = k
 
