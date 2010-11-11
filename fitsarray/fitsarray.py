@@ -25,7 +25,7 @@ class InfoArray(np.ndarray):
 class FitsArray(InfoArray):
     """A numpy ndarray supplemented with a pyfits header
     """
-    def __new__(subtype, shape=None, data=None, infile=None, ext=0, dtype=float, buffer=None, offset=0,
+    def __new__(subtype, shape=None, data=None, file=None, ext=0, dtype=float, buffer=None, offset=0,
                 strides=None, order=None, header=None):
         # various inputs
         if shape is not None:
@@ -33,7 +33,7 @@ class FitsArray(InfoArray):
                                      strides, order)
         elif data is not None:
             obj = np.array(data).view(subtype)
-        elif infile is not None:
+        elif file is not None:
             fits = pyfits.fitsopen(file)
             obj = fits[ext].data.view(subtype)
             header = fits[ext].header
