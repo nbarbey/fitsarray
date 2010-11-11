@@ -176,13 +176,11 @@ def infoarrays2infoarray(arrays):
     for k in keys: header[k] = np.array([])
     out = InfoArray(arrays[0].shape + (N,), header=header)
     # update values
-    out[:] = np.concatenate([array.reshape(array.shape + (1,))
-                             for array in arrays], axis=-1)
+    [a.resize(a.shape + (1,)) for a in arrays]
+    out[:] = np.concatenate(arrays, axis=-1)
     # update keys
-    for array in arrays:
-        for k in keys:
-            out.header[k] = np.concatenate((np.array(out.header[k]),
-                                            np.array([array.header[k]])))
+    for k in keys:
+        out.header[k] = np.concatenate([a.header[k] for a in arrays])
     return out
 
 def fits2fitsarray(fits, ext=0):
