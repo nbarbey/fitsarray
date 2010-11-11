@@ -180,7 +180,7 @@ def infoarrays2infoarray(arrays):
     out[:] = np.concatenate(arrays, axis=-1)
     # update keys
     for k in keys:
-        out.header[k] = np.concatenate([np.asarray(a.header[k]) for a in arrays])
+        out.header[k] = np.concatenate([np.asarray((a.header[k],)) for a in arrays])
     return out
 
 def fits2fitsarray(fits, ext=0):
