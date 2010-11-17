@@ -110,11 +110,10 @@ def copy_header(header):
         try:
             cards.append(pyfits.Card(key=k, value=header_dict[k]))
         except(ValueError):
-            pass
-        try:
-            cards.append(pyfits.Card(key=k, value=float(header_dict[k])))
-        except(ValueError):
-            pass
+            try:
+                cards.append(pyfits.Card(key=k, value=float(header_dict[k])))
+            except(ValueError):
+                pass
     return pyfits.Header(cards=cards)
 
 def read_fits_array(filename, ext=0):
