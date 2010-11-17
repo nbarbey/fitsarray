@@ -104,7 +104,17 @@ def enforce_minimal_header(arr):
 
 def copy_header(header):
     header_dict = dict(header)
-    cards = [pyfits.Card(key=k, value=header_dict[k]) for k in header_dict]
+    dtype = get_dtype(header)
+    cards = list()
+    for k in header_dict:
+        try:
+            cards.append(pyfits.Card(key=k, value=header_dict[k]))
+        except(ValueError):
+            pass
+        try:
+            cards.append(pyfits.Card(key=k, value=float(header_dict[k])))
+        except(ValueError):
+            pass
     return pyfits.Header(cards=cards)
 
 def read_fits_array(filename, ext=0):
@@ -180,7 +190,7 @@ def infoarrays2infoarray(arrays):
     out[:] = np.concatenate(arrays, axis=-1)
     # update keys
     for k in keys:
-        out.header[k] = np.concatenate([np.asarray(a.header[k]) for a in arrays])
+        out.header[k] = np.concatenate([np.asarray((a.header[k],)) for a in arrays])
     return out
 
 def fits2fitsarray(fits, ext=0):
