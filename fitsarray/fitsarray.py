@@ -92,7 +92,7 @@ class FitsArray(InfoArray):
             out.header['CRPIX' + strn] /= f
             out.header['NAXIS' + strn] /= f
         # normalize
-        out /= float(np.sum(factors))
+        out /= float(np.prod(factors))
         return out
 
 def enforce_minimal_header(arr):
