@@ -181,18 +181,10 @@ def infoarrays2infoarray(arrays):
     """Get a list of InfoArrays and return an info array
     as a concatenation along a new axis
     """
-    N = len(arrays)
-    keys = arrays[0].header.keys()
-    header = dict()
-    for k in keys: header[k] = np.array([])
-    out = InfoArray(arrays[0].shape + (N,), header=header)
-    # update values
+    headers = [a.header for a in arrays]
     [a.resize(a.shape + (1,)) for a in arrays]
-    out[:] = np.concatenate(arrays, axis=-1)
-    # update keys
-    for k in keys:
-        out.header[k] = np.concatenate([np.asarray((a.header[k],)) for a in arrays])
-    return out
+    data = np.concatenate(arrays, axis=-1)
+    return InfoArray(data=data, header=headers)
 
 def fits2fitsarray(fits, ext=0):
     return hdu2fitsarray(fits[ext])
