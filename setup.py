@@ -4,7 +4,7 @@ from numpy import get_include
 from os.path import join
 import sys
 setup(name='fitsarray',
-      version='0.1.1',
+      version='0.2.0',
       description='An ndarray subclass with a fits header',
       author='Nicolas Barbey',
       author_email='nicolas.a.barbey@gmail.com',
