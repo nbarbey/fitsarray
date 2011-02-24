@@ -19,6 +19,16 @@ class InfoArray(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None: return
         self.header = getattr(obj, 'header', None)
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return self.header[key]
+        else:
+            return np.ndarray.__getitem__(self, key)
+    def __setitem__(self, key, val):
+        if isinstance(key, str):
+            self.header[key] = val
+        else:
+            return np.ndarray.__setitem__(self, key, val)
     def copy(self):
         return asinfoarray(copy.copy(self), header=copy.copy(self.header))
 
