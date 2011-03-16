@@ -1,3 +1,9 @@
+"""
+Manipulate fits data as simply as ndarray.
+
+author: Nicolas Barbey (nicolas.a.barbey@gmail.com)
+"""
+
 import numpy as np
 import pyfits
 import copy
