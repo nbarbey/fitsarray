@@ -148,6 +148,8 @@ def read_fits_array(filename, ext=0):
 def asfitsarray(array, header=None):
     """Returns a view of an ndarray or a subclass as a FitsArray
     """
+    if header is None:
+        header = pyfits.PrimaryHDU(array).header
     header = copy_header(getattr(array, 'header', header))
     if isinstance(header, dict):
         header = dict2header(header)
