@@ -64,11 +64,12 @@ class FitsArray(InfoArray):
         return obj
     def update(self, key, value, **kargs):
         self.header.update(key, value, **kargs)
-    def tofits(self, filename):
-        """Save FitsArray as a fits file
+    def tofits(self, filename, **kwargs):
+        """Save FitsArray as a fits file.
+        Optional arguments are passed to writeto
         """
         hdu = pyfits.PrimaryHDU(self, header=self.header)
-        hdu.writeto(filename)
+        hdu.writeto(filename, **kwargs)
     def axes(self):
         axes_list = []
         for n in xrange(self.ndim):
